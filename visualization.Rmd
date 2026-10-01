@@ -58,7 +58,7 @@ Show faceting
 weather_df |> 
   ggplot(aes(x = tmin, y = tmax, color = name)) + 
   geom_point(alpha = 0.5) +
-  facet_grid(. ~name)
+  facet_grid(. ~name) # rows ~ columns, and the period is a placeholder meaning "don't split by anything in this dimension." period can be ommitted here.
 ```
 
 ```{r}
@@ -66,15 +66,30 @@ weather_df |>
 weather_df |> 
   ggplot(aes(x = tmin, y = tmax, color = name)) + 
   geom_point(alpha = 0.5) +
-  facet_grid(col = vars(name))
-```
+  facet_grid(col = vars(name)) # newer, more explicit syntax. "Make a grid of panels where the columns come from the name variable."
+``` 
 
 
 Look at sth else  
 
 ```{r}
 weather_df |> 
-  ggplot(aes(x = date, y = tmax)) +
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_point(aes(size = prcp), alpha = .5) +
+  geom_smooth(se = FALSE) #se=FALSE means not showing confident level, se=true by default
+  facet_grid(. ~ name)
+```
+  
+make a plot of central park tmax vs tmin only, and convert temperatures from celcius to farenheit.  
+
+```{r}
+weather_df |> 
+  filter(name == "CentralPark_NY") |> 
+  mutate(
+    tmin = tmin*(9/5)+32,
+    tmax = tmax*(9/5)+32
+  ) |> 
+  ggplot(aes(x = tmin, y = tmax)) + 
   geom_point()
 ```
 

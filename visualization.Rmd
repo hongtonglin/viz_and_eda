@@ -1,0 +1,80 @@
+---
+title: "Visualization"
+author: "Hongtong Lin"
+date: "2026-10-01"
+output: github_document
+---
+
+loading libraries
+```{r, message = FALSE}
+library(tidyverse)
+library(ggridges)
+
+library(p8105.datasets)
+data("weather_df")
+```
+  
+
+```{r}
+dim(weather_df)
+str(weather_df)
+head(weather_df)
+colnames(weather_df)
+```
+  
+Let's make some scatterplots  
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y=tmax)) +
+  geom_point()
+```
+
+
+do the data frame first
+```{r}
+gg_temp_scatterplot <-
+  weather_df |> 
+    ggplot(aes(x = tmin, y=tmax)) +
+    geom_point()
+
+gg_temp_scatterplot
+```
+
+
+
+make it a bit fancier
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmin, y=tmax, color = name)) +
+  geom_point(alpha = .25) +
+  geom_smooth(se=FALSE)
+
+```
+
+Show faceting  
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax, color = name)) + 
+  geom_point(alpha = 0.5) +
+  facet_grid(. ~name)
+```
+
+```{r}
+
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax, color = name)) + 
+  geom_point(alpha = 0.5) +
+  facet_grid(col = vars(name))
+```
+
+
+Look at sth else  
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = date, y = tmax)) +
+  geom_point()
+```
+

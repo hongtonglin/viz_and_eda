@@ -196,3 +196,133 @@ weather_df |>
 ```
 
 ![](visualization_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+what’s a hex plot
+
+``` r
+library(hexbin)
+```
+
+``` r
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax)) + 
+  geom_hex() #2d histogram with hex boxes
+```
+
+    ## Warning: Removed 17 rows containing non-finite outside the scale range
+    ## (`stat_binhex()`).
+
+![](visualization_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+## Univariate plots
+
+``` r
+weather_df |> 
+  ggplot(aes(x = tmax)) + 
+  geom_histogram()
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
+
+    ## Warning: Removed 17 rows containing non-finite outside the scale range
+    ## (`stat_bin()`).
+
+![](visualization_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+``` r
+weather_df |> 
+  ggplot(aes(x = tmax, color = name)) + 
+  geom_histogram(position = "dodge") + 
+  facet_grid(col = vars(name))
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
+
+    ## Warning: Removed 17 rows containing non-finite outside the scale range
+    ## (`stat_bin()`).
+
+![](visualization_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
+Density plots are great!
+
+``` r
+weather_df |> 
+  ggplot(aes(x = tmax, fill = name)) + 
+  geom_density(alpha = .3)
+```
+
+    ## Warning: Removed 17 rows containing non-finite outside the scale range
+    ## (`stat_density()`).
+
+![](visualization_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+Box plots
+
+``` r
+weather_df |> 
+  ggplot(aes(x = name, y = tmax)) + 
+  geom_boxplot()
+```
+
+    ## Warning: Removed 17 rows containing non-finite outside the scale range
+    ## (`stat_boxplot()`).
+
+![](visualization_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+
+Violin plot
+
+``` r
+weather_df |> 
+  ggplot(aes(x = name, y = tmax)) + 
+  geom_violin()
+```
+
+    ## Warning: Removed 17 rows containing non-finite outside the scale range
+    ## (`stat_ydensity()`).
+
+![](visualization_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+Ridge plots
+
+``` r
+weather_df |> 
+  ggplot(aes(x = tmax, y =name)) + 
+  geom_density_ridges() # for many categories
+```
+
+    ## Picking joint bandwidth of 1.54
+
+    ## Warning: Removed 17 rows containing non-finite outside the scale range
+    ## (`stat_density_ridges()`).
+
+![](visualization_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+
+## save some of my plots
+
+``` r
+ggp_weather <- 
+  weather_df |> 
+    ggplot(aes(x = date, y = tmax, color = name)) + 
+    geom_point(aes(size = prcp), alpha= 0.5) + 
+    facet_grid(col = vars(name))
+
+ggsave("images/ggp_weather.pdf", ggp_weather)
+```
+
+    ## Saving 7 x 5 in image
+
+    ## Warning: Removed 19 rows containing missing values or values outside the scale range
+    ## (`geom_point()`).
+
+``` r
+# "fig.width = 12, fig.height = 12" in r chunk to set and adjust figure settings 
+
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax)) + 
+  geom_point()
+```
+
+    ## Warning: Removed 17 rows containing missing values or values outside the scale range
+    ## (`geom_point()`).
+
+![](visualization_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->

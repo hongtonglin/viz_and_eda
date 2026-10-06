@@ -1,0 +1,75 @@
+---
+title: "20271006_visualization"
+author: "Hongtong Lin"
+date: "2026-10-06"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+loading libraries
+```{r, message = FALSE}
+library(tidyverse)
+
+library(p8105.datasets)
+data("weather_df")
+```
+
+```{r, warning=FALSE}
+weather_df |> 
+  ggplot(aes(x= tmax, y = tmin, color = name)) + 
+  geom_point()+
+  labs(
+    title = "Temperature (max vs min)",
+    x = "Max temp (C)",
+    y = "Min temp (C)",
+    color = "location",
+    caption = "Data from NOAA for three weather stations"
+  )
+```
+
+Try some other scales  
+
+```{r}
+weather_df |> 
+  ggplot(aes(x= tmax, y = tmin, color = name)) + 
+  geom_point()+
+  labs(
+    title = "Temperature (max vs min)",
+    x = "Max temp (C)",
+    y = "Min temp (C)",
+    color = "location",
+    caption = "Data from NOAA for three weather stations"
+  ) +
+  scale_x_continuous(  # controls how a continuous x-axis looks and behave
+    breaks = c(-15, 0, 15),
+    labels = c("-10C", "0", "fifteen")
+  ) + 
+  scale_y_continuous(
+    trans = "sqrt",
+    position = "right"
+  )
+```
+
+let's look at color  
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmax, y=tmin, color = name)) +
+  geom_point() +
+  scale_color_hue(h = c(10, 500))
+  
+```
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmax, y=tmin, color = name)) +
+  geom_point() +
+  viridis::scale_color_viridis( # can put it in the global setting
+    name = "Location",
+    discrete = TRUE # has to add this because i'm dealing with a continuous scale, but the categories are discrete values/levels
+  )
+  
+```

@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 loading libraries
 ```{r, message = FALSE}
 library(tidyverse)
-
+library(patchwork) # to allow two ggplots to be included in one window
 library(p8105.datasets)
 data("weather_df")
 ```
@@ -73,3 +73,163 @@ weather_df |>
   )
   
 ```
+
+
+## Themes  
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmax, y=tmin, color = name)) +
+  geom_point() +
+  viridis::scale_color_viridis(
+    name = "Location",
+    discrete = TRUE
+  ) + 
+   # theme_classic, etc, or try ggthemes package
+  theme(legend.position = "bottom") + 
+  theme_minimal() # the order of is matters, will override the legend position at the bottom on the previous line
+
+```
+
+Update the tmax vs date plot
+```{r}
+weather_df |> 
+  ggplot(aes(x = date, y =tmax , color = name)) +
+  geom_point() +
+  geom_smooth(se = FALSE) + 
+  labs(
+    title = "Seasonal trends in Max Temp",
+    x = "Date",
+    y = "Max Temperature (C)",
+    caption = "Max daily temp in 3 weather stations in 2021 and 2020"
+  ) +
+  viridis::scale_color_viridis(
+    name = "Location",
+    discrete = TRUE
+  ) +
+  theme_minimal() + 
+  theme(legend.position = "bottom")
+```
+
+## Two more weird but useful plot things  
+
+```{r}
+central_park_df <- 
+  weather_df |> 
+  filter(name == "CentralPark_NY")
+
+molokai_df <- 
+  weather_df |> 
+  filter(name == "Molokai_HI")
+
+ggplot(molokai_df,
+       aes(x = date, y= tmax, color = name)) + 
+  geom_point() + 
+  geom_line(data = central_park_df) + 
+  viridis::scale_color_viridis(
+    discrete = TRUE,
+    name = "Location"
+  )
+```
+  
+  
+multiple pannels with different plot types
+
+```{r}
+ggp_tmax_tmin <- 
+  weather_df |> 
+  ggplot(aes(x = tmin, y = tmax, color = name)) +
+  geom_point() + 
+  theme(legend.position = "none")
+
+ggp_prcp_desnity <- 
+  weather_df |> 
+  filter(prcp > 0) |> 
+  ggplot(aes(x = prcp, fill = name)) + 
+  geom_density(alpha = 0.5) + 
+  theme(legend.position = "none")
+
+ggp_seasonal <- 
+  weather_df |> 
+  ggplot(aes(x = date, y = tmax, color = name)) + 
+  geom_point()+ 
+  theme(legend.position = "bottom")
+
+ggp_tmax_tmin + ggp_prcp_desnity
+ggp_tmax_tmin / ggp_prcp_desnity
+```
+  
+## Data manipulation  
+
+```{r}
+weather_df |> 
+  mutate(name = factor(name)) |> # mutate the name from character to the factor variable 
+  ggplot(aes(x= name, y = tmax)) + 
+  geom_boxplot() # coerce name into factors 
+```
+
+```{r}
+weather_df |> 
+  mutate(name = fct_relevel(name, c("Molokai_HI", "CentralPark_NY", "Waterhole_WA"))) |> # coerce name into factors. start with the level, what order do you want to go in?
+  ggplot(aes(x= name, y = tmax)) + 
+  geom_boxplot() # coerce name into factors 
+```
+  
+```{r}
+weather_df |> 
+  mutate(name = fct_reorder(name, tmax)) |> # reorders the levels of the factor name based on the values of tmax
+  ggplot(aes(x= name, y = tmax)) + 
+  geom_boxplot() # coerce name into factors 
+```
+
+Make distribution plots  
+```{r}
+weather_df |> 
+  select(name, tmax, tmin) |> 
+  pivot_longer(
+    tmax:tmin,
+    names_to = "observation",
+    values_to = "actual_temperature"
+  ) |> 
+  ggplot(aes(x = actual_temperature, fill = observation)) + 
+  geom_density(alpha = .5) + 
+  facet_grid(cols = vars(name)) # vars() is how you tell ggplot2 which column(s) to facet by. "cols = " This argument says which variable(s) define the columns of the grid. So the panels are laid out side by side, one column per category.
+```
+  
+multipanels for the FAS_pups data  
+```{r}
+pup_df <- 
+  read_csv("./data/FAS_pups.csv",
+           na = c("NA", ".", ""),
+           skip = 3) |> 
+  janitor::clean_names() |> 
+  mutate(
+    recode_values(
+    sex,
+    1 ~ "male",
+    0 ~ "female"
+  )
+  )
+
+litter_df <-
+  read_csv("./data/FAS_litters.csv",
+           na = c("NA", ".", "")) |> 
+  janitor::clean_names() |> 
+  separate(group, into = c("dose", "day_of_tx"), 3)
+
+fas_df <- 
+  left_join(pup_df, litter_df, by = "litter_number")
+
+fas_df |> 
+  select(dose, day_of_tx, starts_with("pd")) |> 
+  pivot_longer(
+    starts_with("pd"),
+    names_to = "outcome",
+    values_to = "pn_day"
+  ) |> 
+  drop_na() |> 
+  ggplot(aes(x = dose, y = pn_day)) +
+  geom_boxplot() + 
+  facet_grid(day_of_tx ~ outcome)
+```
+
+  

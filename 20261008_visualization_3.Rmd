@@ -1,0 +1,239 @@
+---
+title: "20261008_visualization"
+author: "Hongtong Lin"
+date: "2026-10-08"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# loading libraries
+library(tidyverse)
+library(patchwork) # to allow two ggplots to be included in one window
+library(p8105.datasets)
+library(viridis)
+data("weather_df")
+
+# color palette setting
+options(ggplot2.continuous.colour = "viridis")
+options(ggplot2.continuous.fill = "viridis")
+```
+
+
+
+```{r}
+weather_df |> 
+  filter(prcp >0) |> 
+  ggplot(aes(x = prcp)) + 
+  geom_histogram()
+```
+  
+Do I believe this value?  
+  
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmax, y = tmin, color = name, shape = name)) + 
+  geom_point()
+```
+
+
+## group_by()  
+
+add some groups  
+
+```{r}
+weather_df <- 
+  weather_df |> 
+  mutate(
+    month = lubridate::floor_date(date, unit = "month")
+  ) # lowest value for each of the month
+
+weather_df
+```
+
+```{r}
+weather_df |> 
+  group_by(name, month) # 3 names, 12 months, 2 years, multipled together = 72 groups
+```
+  
+  
+## `summarize()`  
+
+```{r}
+weather_df |> 
+  group_by(name) |> 
+  summarise(count = n())
+```
+
+```{r}
+weather_df |> 
+  group_by(name, month) |> 
+  summarise(count = n())
+```
+
+```{r}
+weather_df |> 
+  count(name) # instead of doing group_by and summarizing, it will automatically counting for you. 
+```
+
+```{r}
+weather_df |> 
+  group_by(month) |> 
+  summarise(
+    count = n(),
+    n_days = n_distinct(date),
+    )
+```
+ 
+  
+```{r}
+weather_df |> 
+  group_by(name) |> 
+  summarise(
+    mean_tmax = mean(tmax, na.rm = TRUE),
+    median_tmax = median(tmax, na.rm = TRUE),
+    sd_prcp = sd(prcp, na.rm = TRUE),
+    q25_prcp = quantile(prcp, .25, na.rm = TRUE),
+    q95_prcp = quantile(prcp, .95, na.rm = TRUE)
+  ) |> 
+  knitr::kable(digits = 2) # reader friendly, limit the signficance figures to be 2at max
+```
+
+```{r}
+weather_df |> 
+  group_by(name) |> 
+  summarise(
+    mean_tmax = mean(tmax, na.rm = TRUE)
+  ) |> 
+  pivot_wider(
+    names_from = name,
+    values_from = mean_tmax
+  ) # can make the table untidy to be reader friendly
+  
+```
+  
+  
+what about doing this  
+
+```{r}
+weather_df |> 
+  group_by(name, month) |> 
+  summarise(
+    mean_tmax = mean(tmax, na.rm = TRUE)
+  ) |> 
+  ggplot(aes(x =month, y= mean_tmax, color = name)) +
+  geom_point() + 
+  geom_line()
+```
+
+```{r}
+weather_df |> 
+  mutate(
+    center_tmax = tmax - mean(tmax, na.rm = TRUE)
+  ) |> 
+ggplot(aes(x= date, y = center_tmax, color = name))+
+  geom_point()
+```
+
+What about "window" functions?  
+
+Try to rank things  
+
+```{r}
+weather_df |> 
+  group_by(name, month) |> 
+  mutate(temp_rank = min_rank(tmax)) |> 
+  filter(temp_rank <2)
+```
+
+`lead` and `lag` functions  
+the order of the data sets matters
+```{r}
+weather_df |> 
+  group_by(name) |> 
+  mutate(
+    lagged_tmax = lag(tmax) # Shift by 1 position (default)
+    )
+```
+
+```{r}
+weather_df |> 
+  group_by(name) |> 
+  mutate(
+    lagged_tmax = lag(tmax, n = 3) # Shift by 3 positions
+    )
+```
+
+```{r}
+weather_df |> 
+  group_by(name) |> 
+  mutate(
+    lagged_tmax = lag(tmax), # Shift by 3 positions
+    temp_change = tmax - lagged_tmax
+    ) |> 
+  summarise(
+    mean_temp_change = mean(temp_change, na.rm = TRUE),
+    sd_temp_change = sd(temp_change, na.rm = TRUE)
+  )
+```
+
+
+## revisit same samples  
+
+import, clean, tidy, etc the pulse data, and compute mean and median BDI score at each visit  
+
+```{r}
+pulse_df <- haven::read_sas("data/public_pulse_data.sas7bdat") |> 
+  janitor::clean_names() |> 
+  pivot_longer(
+    bdi_score_bl:bdi_score_12m,
+    names_to = "visit",
+    values_to = "bdi_score"
+  ) |> 
+  select(id, visit, everything()) |> 
+  mutate(
+    visit = replace(visit, visit == "bl", "00m")
+  ) 
+# |> 
+#   str_remove(visit, "bdi_score_")
+
+pulse_df |> 
+  group_by(visit) |> 
+  summarize(
+    mean_bdi = mean(bdi_score, na.rm=TRUE),
+    median_bdi = median(bdi_score, na.rm=TRUE)
+    )
+```
+
+
+In the FAS data, compute mean outcome (ears only) across dose and day_of_txl; show in a reader friendly table  
+
+```{r}
+pups_df <- 
+  read_csv("data/FAS_pups.csv", skip = 3, na = c("NA", "", ".")) |> 
+  janitor::clean_names() 
+
+litter_df <-
+  read_csv("data/FAS_litters.csv", na = c("NA", "", ".")) |> 
+  janitor::clean_names() |> 
+  separate(group, into = c("dose", "day_of_tx", 3))
+
+fas_df <- 
+  left_join(pups_df, litter_df, by = "litter_number") |> 
+  select(litter_number, dose, day_of_tx, everything())
+
+fas_df |> 
+  group_by(dose, day_of_tx) |> 
+  summarise(
+    mean_ears = mean(pd_ears, na.rm = TRUE)
+  ) |> 
+  pivot_wider(
+    names_from = day_of_tx, 
+    values_from = mean_ears
+  )
+```
+
+
+
+
